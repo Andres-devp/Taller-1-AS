@@ -1,0 +1,51 @@
+fullnameOverride: auth-lab
+
+frontend:
+  image:
+    repository: auth-lab-frontend
+    tag: local
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources: {}
+
+backend:
+  image:
+    repository: auth-lab-backend
+    tag: local
+    pullPolicy: IfNotPresent
+  replicas: 2
+  retryDelayMs: 100
+  resources: {}
+  probes:
+    liveness:
+      initialDelaySeconds: 15
+      periodSeconds: 10
+    readiness:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+
+database:
+  image:
+    repository: auth-lab-h2
+    tag: local
+    pullPolicy: IfNotPresent
+  primary:
+    replicas: 1
+  secondary:
+    replicas: 1
+  credentials:
+    existingSecret: ""
+    username: auth_app
+    # Synthetic lab credential only. Override outside the laboratory.
+    password: change-me
+  resources: {}
+  probes:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+ingress:
+  enabled: true
+  className: nginx
+  host: localhost
+
+resources: {}

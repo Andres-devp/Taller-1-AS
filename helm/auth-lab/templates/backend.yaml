@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "auth-lab.fullname" . }}-backend
+  labels:
+    {{- include "auth-lab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PRIMARY_DB_URL
+              value: jdbc:h2:tcp://{{ include "auth-lab.fullname" . }}-h2-primary:9092/./authdb
+            - name: SECONDARY_DB_URL
+              value: jdbc:h2:tcp://{{ include "auth-lab.fullname" . }}-h2-secondary:9092/./authdb
+            - name: DB_RETRY_DELAY_MS
+              value: {{ .Values.backend.retryDelayMs | quote }}
+            - name: DB_USERNAME
+              valueFrom: { secretKeyRef: { name: {{ include "auth-lab.credentialsSecretName" . }}, key: username } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ include "auth-lab.credentialsSecretName" . }}, key: password } }
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "auth-lab.fullname" . }}-backend
+  labels:
+    {{- include "auth-lab.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
