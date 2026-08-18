@@ -64,13 +64,15 @@ jobs:
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm repo update
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-            --namespace ingress-nginx --create-namespace --version 4.11.3 --wait --timeout 3m
+            --namespace ingress-nginx --create-namespace --version 4.11.3 \
+            --set controller.admissionWebhooks.enabled=false \
+            --wait --timeout 5m
           kind load docker-image --name auth-lab auth-lab-backend:ci
           kind load docker-image --name auth-lab auth-lab-frontend:ci
           kind load docker-image --name auth-lab auth-lab-h2:ci
           helm upgrade --install auth-lab ./helm/auth-lab \
             --set backend.image.tag=ci --set frontend.image.tag=ci --set database.image.tag=ci \
-            --atomic --wait --timeout 3m
+            --atomic --wait --timeout 5m
 
       - name: Smoke test through Ingress
         shell: pwsh
