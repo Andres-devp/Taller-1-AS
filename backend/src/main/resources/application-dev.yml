@@ -1,0 +1,9 @@
+auth:
+  database:
+    primary:
+      url: jdbc:h2:mem:authdb_primary;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'classpath:seed.sql'
+    secondary:
+      url: jdbc:h2:mem:authdb_secondary;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'classpath:seed.sql'
+    username: sa
+    password:
+    retry-delay-ms: 50
